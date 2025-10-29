@@ -263,7 +263,7 @@ return {
       'stylua', -- Used to format Lua code
       'jdtls', -- Java
       'pyright', -- Python
-      'eslint', -- JS/TS
+      'typescript-language-server', -- JS/TS
       'clangd', -- C/C++
     })
 

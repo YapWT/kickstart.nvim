@@ -91,7 +91,7 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Set to true if you have a Nerd Font installed and selected in the terminal
-vim.g.have_nerd_font = false
+vim.g.have_nerd_font = true
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
@@ -120,7 +120,9 @@ end)
 
 -- Enable break indent
 vim.o.breakindent = true
-
+vim.o.showbreak = '↳ '
+vim.o.wrap = true
+vim.o.linebreak = true
 -- Save undo history
 vim.o.undofile = true
 
@@ -159,7 +161,18 @@ vim.o.inccommand = 'split'
 vim.o.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
-vim.o.scrolloff = 10
+-- vim.o.scrolloff = 10
+vim.keymap.set({ 'n' }, '<ScrollWheelUp>', function()
+  local pos = vim.api.nvim_win_get_cursor(0)
+  vim.cmd 'normal! 3<C-y>'
+  vim.api.nvim_win_set_cursor(0, pos)
+end, { noremap = true, silent = true })
+
+vim.keymap.set({ 'n' }, '<ScrollWheelDown>', function()
+  local pos = vim.api.nvim_win_get_cursor(0)
+  vim.cmd 'normal! 3<C-e>'
+  vim.api.nvim_win_set_cursor(0, pos)
+end, { noremap = true, silent = true })
 
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
@@ -325,11 +338,13 @@ require('lazy').setup({
   require 'kickstart.plugins.indent_line', -- Visualize indentation lines
   require 'kickstart.plugins.lint', -- Linting for code errors/warnings
   require 'kickstart.plugins.autopairs', -- Auto-closing of brackets, quotes, etc.
-
+  require 'kickstart.plugins.bufferline', -- A snazzy 💅 buffer line (with tabpage integration)
+  -- require 'kickstart.plugins.neoscroll', -- Scrolling plugins
+  require 'kickstart.plugins.lualine', -- Statusline configuration
   -- File explorer & Git integration
   require 'kickstart.plugins.neo-tree', -- File explorer tree
   require 'kickstart.plugins.gitsigns', -- Git signs in the gutter and change indicators
-
+  require 'kickstart.plugins.trouble',
   -- LSP Plugins
   {
     -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
