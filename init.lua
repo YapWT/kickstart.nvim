@@ -119,7 +119,7 @@ vim.schedule(function()
 end)
 
 -- Enable break indent
-vim.o.breakindent = true
+vim.o.breakindent = false
 vim.o.showbreak = '↳ '
 vim.o.wrap = true
 vim.o.linebreak = true
@@ -161,18 +161,7 @@ vim.o.inccommand = 'split'
 vim.o.cursorline = true
 
 -- Minimal number of screen lines to keep above and below the cursor.
--- vim.o.scrolloff = 10
-vim.keymap.set({ 'n' }, '<ScrollWheelUp>', function()
-  local pos = vim.api.nvim_win_get_cursor(0)
-  vim.cmd 'normal! 3<C-y>'
-  vim.api.nvim_win_set_cursor(0, pos)
-end, { noremap = true, silent = true })
-
-vim.keymap.set({ 'n' }, '<ScrollWheelDown>', function()
-  local pos = vim.api.nvim_win_get_cursor(0)
-  vim.cmd 'normal! 3<C-e>'
-  vim.api.nvim_win_set_cursor(0, pos)
-end, { noremap = true, silent = true })
+vim.o.scrolloff = 10
 
 -- if performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s)
@@ -345,6 +334,7 @@ require('lazy').setup({
   require 'kickstart.plugins.neo-tree', -- File explorer tree
   require 'kickstart.plugins.gitsigns', -- Git signs in the gutter and change indicators
   require 'kickstart.plugins.trouble',
+  -- require 'kickstart.plugins.pretty-fold'
   -- LSP Plugins
   {
     -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
