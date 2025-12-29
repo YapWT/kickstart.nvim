@@ -3,26 +3,66 @@ return {
     'echasnovski/mini.nvim',
     -- Collection of various small independent plugins/modules 'echasnovski/mini.nvim',
     config = function()
-      -- Better Around/Inside textobjects
-      --
-      -- Examples:
-      --  - va)  - [V]isually select [A]round [)]paren
-      --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
-      --  - ci'  - [C]hange [I]nside [']quote
+      -- Core text editing
       require('mini.ai').setup { n_lines = 500 }
-
-      -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      --
-      -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-      -- - sd'   - [S]urround [D]elete [']quotes
-      -- - sr)'  - [S]urround [R]eplace [)] [']
+      -- require('mini.align').setup()
+      -- require('mini.comment').setup()
+      -- require('mini.completion').setup()
+      -- require('mini.keymap').setup()
+      require('mini.move').setup()
+      -- require('mini.operators').setup()
+      -- require('mini.pairs').setup()
+      -- require('mini.snippets').setup()
+      -- require('mini.splitjoin').setup()
       require('mini.surround').setup()
 
-      -- Simple and easy statusline.
-      --  You could remove this setup call if you don't like it,
-      --  and try some other statusline plugin
+      -- Basics & navigation
+      -- require('mini.basics').setup()
+      require('mini.bracketed').setup()
+      -- require('mini.bufremove').setup()
+      -- require('mini.clue').seup()
+      -- require('mini.cmdline').setup()
+      -- require('mini.deps').setup()
+      -- require('mini.diff').setup()
+      -- require('mini.extra').setup()
+      -- require('mini.files').setup()
+      require('mini.git').setup()
+      -- require('mini.jump').setup()
+      -- require('mini.jump2d').setup()
+      -- require('mini.misc').setup()
+      -- require('mini.pick').setup()
+      -- require('mini.sessions').setup()
+      -- require('mini.visits').setup()
+
+      -- Appearance
+      -- require('mini.animate').setup()
+      -- require('mini.base16').setup()
+      -- require('mini.colors').setup()
+      -- require('mini.cursorword').setup()
+      local hipatterns = require 'mini.hipatterns'
+      hipatterns.setup {
+        highlighters = {
+          -- Highlight hex color strings (`#rrggbb`) using that color
+          hex_color = hipatterns.gen_highlighter.hex_color(), -- ('#ffffff')
+        },
+      }
+
+      -- require('mini.hues').setup()
+      -- require('mini.icons').setup()
+      -- require('mini.indentscope').setup()
+      -- require('mini.map').setup()
+      -- require('mini.notify').setup()
+      -- require('mini.starter').setup()
+      require('mini.statusline').setup()
+      -- require('mini.tabline').setup()
+      -- require('mini.trailspace').setup()
+
+      -- Other
+      -- require('mini.doc').setup()
+      -- require('mini.fuzzy').setup()
+      -- require('mini.test').setup()
+
       local statusline = require 'mini.statusline'
-      -- set use_icons to true if you have a Nerd Font
       statusline.setup { use_icons = vim.g.have_nerd_font }
 
       -- You can configure sections in the statusline by overriding their
