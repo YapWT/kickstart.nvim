@@ -1,45 +1,88 @@
 return {
-  -- Highlight, edit, and navigate code
-  'nvim-treesitter/nvim-treesitter',
-  build = ':TSUpdate',
-  main = 'nvim-treesitter.configs', -- Sets main module to use for opts
-  -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
-  opts = {
+    -- Highlight, edit, and navigate code
+    'nvim-treesitter/nvim-treesitter',
+    version = 'v0.10.0',
+    build = ':TSUpdate',
+    event = { 'BufReadPost', 'BufNewFile' },
+    config = function()
+        require('nvim-treesitter.configs').setup({
+            ensure_installed = {
+                'bash',
+                'c',
+                'cpp', -- if you use C++
+                'java',
+                'python',
+                'javascript',
+                'typescript', -- optional but often useful with JS
+                'html',
+                'lua',
+                'luadoc',
+                'markdown',
+                'markdown_inline',
+                'query',
+                'vim',
+                'vimdoc',
+                'diff',
+            },
+            -- Autoinstall languages that are not installed
+            auto_install = true,
+            highlight = {
+                enable = true,
+                -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
+                --  If you are experiencing weird indenting issues, add the language to
+                --  the list of additional_vim_regex_highlighting and disabled languages for indent.
+                additional_vim_regex_highlighting = { 'ruby' },
+            },
+            indent = { enable = true, disable = { 'ruby' } },
+        })
 
-    ensure_installed = {
-      'bash',
-      'c',
-      'cpp', -- if you use C++
-      'java',
-      'python',
-      'javascript',
-      'typescript', -- optional but often useful with JS
-      'html',
-      'lua',
-      'luadoc',
-      'markdown',
-      'markdown_inline',
-      'query',
-      'vim',
-      'vimdoc',
-      'diff',
-    },
-    -- Autoinstall languages that are not installed
-    auto_install = true,
-    highlight = {
-      enable = true,
-      -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-      --  If you are experiencing weird indenting issues, add the language to
-      --  the list of additional_vim_regex_highlighting and disabled languages for indent.
-      additional_vim_regex_highlighting = { 'ruby' },
-    },
-    indent = { enable = true, disable = { 'ruby' } },
-    fold = { enable = true },
-  },
-  -- There are additional nvim-treesitter modules that you can use to interact
-  -- with nvim-treesitter. You should go explore a few and see what interests you:
-  --
-  --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-  --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-  --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+        vim.opt.foldlevel = 99
+        vim.opt.foldlevelstart = 99
+        vim.opt.foldenable = true
+
+        -- Setup folding
+        vim.api.nvim_create_autocmd('FileType', {
+            group = vim.api.nvim_create_augroup('TS_FOLD_SETUP', {}),
+            callback = function()
+                vim.opt_local.foldmethod = 'expr'
+                vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+            end,
+        })
+
+        -- Restore folds from saved state
+        vim.api.nvim_create_autocmd('BufWinEnter', {
+            group = vim.api.nvim_create_augroup('RESTORE_FOLDS', {}),
+            callback = function(event)
+                if vim.bo.filetype == '' or vim.bo.buftype ~= '' then
+                    return
+                end
+
+                -- Wait for treesitter to be ready
+                vim.defer_fn(function()
+                    -- Open all folds first
+                    vim.cmd('silent! normal! zR')
+                    -- Then load the view which will close the saved folds
+                    vim.cmd('silent! loadview')
+                end, 100)
+            end,
+        })
+
+        -- Save folds
+        vim.api.nvim_create_autocmd('BufWinLeave', {
+            group = vim.api.nvim_create_augroup('SAVE_FOLDS', {}),
+            callback = function()
+                if vim.bo.filetype ~= '' and vim.bo.buftype == '' then
+                    vim.cmd('silent! mkview')
+                end
+            end,
+        })
+    end,
+    -- There are additional nvim-treesitter modules that you can use to interact
+    -- with nvim-treesitter. You should go explore a few and see what interests you:
+    --
+    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
+    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
+    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
 }
+-- if fold not working
+-- use 'kevinhwang91/nvim-ufo' instead of pretty-fold

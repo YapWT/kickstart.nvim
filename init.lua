@@ -46,13 +46,13 @@ Kickstart Guide:
   TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
 
     If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
+      - <escape key>ini
+      - :ini
+      - Tutorini
+      - <enter key>ini
+ini
+    (If you already know the Neovim basics, you can skip this step.)ini
+ini
   Once you've completed that, you can continue working through **AND READING** the rest
   of the kickstart init.lua.
 
@@ -97,6 +97,9 @@ vim.g.have_nerd_font = true
 -- See `:help vim.o`
 -- NOTE: You can change these options as you wish!
 --  For more options, you can see `:help option-list`
+--
+vim.opt.exrc = true   -- Enable project-specific config files
+vim.opt.secure = true -- Restrict dangerous commands
 
 -- Make line numbers default
 vim.o.number = true
@@ -125,6 +128,11 @@ vim.o.wrap = true
 vim.o.linebreak = true
 -- Save undo history
 vim.o.undofile = true
+
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
+vim.opt.softtabstop = 4
+vim.opt.expandtab = true
 
 -- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
 vim.o.ignorecase = true
@@ -213,7 +221,8 @@ vim.api.nvim_set_keymap(
   "<cmd>lua require('telescope.builtin').live_grep({ search = vim.fn.expand('<cword>') })<CR>",
   { noremap = true, silent = true }
 )
-vim.api.nvim_set_keymap('n', '<leader>fb', "<cmd>lua require('telescope.builtin').current_buffer_fuzzy_find()<CR>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>fb', "<cmd>lua require('telescope.builtin').current_buffer_fuzzy_find()<CR>",
+  { noremap = true, silent = true })
 
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
@@ -257,7 +266,7 @@ rtp:prepend(lazypath)
 -- NOTE: Here is where you install your plugins.
 require('lazy').setup({
   -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
+  -- 'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
   -- with the first argument being the link and the following
@@ -267,32 +276,6 @@ require('lazy').setup({
   --
 
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
-  -- If you prefer to call `setup` explicitly, use:
-  --    {
-  --        'lewis6991/gitsigns.nvim',
-  --        config = function()
-  --            require('gitsigns').setup({
-  --                -- Your gitsigns configuration here
-  --            })
-  --        end,
-  --    }
-  --
-  -- Here is a more advanced example where we pass configuration
-  -- options to `gitsigns.nvim`.
-  --
-  -- See `:help gitsigns` to understand what the configuration keys do
-  -- { -- Adds git related signs to the gutter, as well as utilities for managing changes
-  -- 'lewis6991/gitsigns.nvim',
-  -- opts = {
-  --   signs = {
-  --      add = { text = '+' },
-  --     change = { text = '~' },
-  --     delete = { text = '_' },
-  --     topdelete = { text = '‾' },
-  --     changedelete = { text = '~' },
-  --    },
-  --   },
-  --},
 
   -- NOTE: Plugins can also be configured to run Lua code when they are loaded.
   --
@@ -316,23 +299,23 @@ require('lazy').setup({
   --
   -- Use the `dependencies` key to specify the dependencies of a particular plugin
 
-  require 'kickstart.plugins.telescope', -- Fuzzy finder
-  require 'kickstart.plugins.lspConfig', -- Main LSP support
-  require 'kickstart.plugins.conform', -- Autoformatting
-  require 'kickstart.plugins.blink', -- Completion
-  require 'kickstart.plugins.mini', -- Collection of mini plugins
-  require 'kickstart.plugins.treesitter', -- Treesitter syntax highlighting & indenting
+  require 'kickstart.plugins.telescope',     -- Fuzzy finder
+  require 'kickstart.plugins.lspConfig',     -- Main LSP support
+  require 'kickstart.plugins.conform',       -- Autoformatting
+  require 'kickstart.plugins.blink',         -- Completion
+  require 'kickstart.plugins.mini',          -- Collection of mini plugins
+  require 'kickstart.plugins.treesitter',    -- Treesitter syntax highlighting & indenting
 
-  require 'kickstart.plugins.debug', -- Debugging tools (breakpoints, inspect, etc.)
-  require 'kickstart.plugins.indent_line', -- Visualize indentation lines
-  require 'kickstart.plugins.lint', -- Linting for code errors/warnings
-  require 'kickstart.plugins.autopairs', -- Auto-closing of brackets, quotes, etc.
-  require 'kickstart.plugins.bufferline', -- A snazzy 💅 buffer line (with tabpage integration)
+  require 'kickstart.plugins.debug',         -- Debugging tools (breakpoints, inspect, etc.)
+  require 'kickstart.plugins.indent_line',   -- Visualize indentation lines
+  require 'kickstart.plugins.lint',          -- Linting for code errors/warnings
+  require 'kickstart.plugins.autopairs',     -- Auto-closing of brackets, quotes, etc.
+  require 'kickstart.plugins.bufferline',    -- A snazzy 💅 buffer line (with tabpage integration)
   -- require 'kickstart.plugins.neoscroll', -- Scrolling plugins
-  require 'kickstart.plugins.lualine', -- Statusline configuration
+  require 'kickstart.plugins.lualine',       -- Statusline configuration
   -- File explorer & Git integration
-  require 'kickstart.plugins.neo-tree', -- File explorer tree
-  require 'kickstart.plugins.gitsigns', -- Git signs in the gutter and change indicators
+  require 'kickstart.plugins.neo-tree',      -- File explorer tree
+  require 'kickstart.plugins.gitsigns',      -- Git signs in the gutter and change indicators
   require 'kickstart.plugins.trouble',
   require 'kickstart.plugins.todo-comments', -- Highlight todo, notes, etc in comments
   require 'kickstart.plugins.pretty-fold',
