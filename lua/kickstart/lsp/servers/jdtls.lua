@@ -32,144 +32,181 @@
 ---       vim.lsp.config('jdtls', { cmd = { 'jdtls' } })
 ---     ```
 
-local function get_jdtls_cache_dir()
-    return vim.fn.stdpath('cache') .. '/jdtls'
-end
-
-local function get_jdtls_workspace_dir()
-    return get_jdtls_cache_dir() .. '/workspace'
-end
-
 local function get_jdtls_jvm_args()
     local env = os.getenv('JDTLS_JVM_ARGS')
     local args = {}
     for a in string.gmatch((env or ''), '%S+') do
-        local arg = string.format('--jvm-arg=%s', a)
-        table.insert(args, arg)
+        table.insert(args, string.format('--jvm-arg=%s', a))
     end
-    return unpack(args)
+    return args
 end
 
-local root_markers1 = {
-    -- Multi-module projects
-    'mvnw',              -- Maven
-    'gradlew',           -- Gradle
-    'settings.gradle',   -- Gradle
-    'settings.gradle.kts', -- Gradle
-    -- Use git directory as last resort for multi-module maven projects
-    -- In multi-module maven projects it is not really possible to determine what is the parent directory
-    -- and what is submodule directory. And jdtls does not break if the parent directory is at higher level than
-    -- actual parent pom.xml so propagating all the way to root git directory is fine
-    '.git',
-}
-local root_markers2 = {
-    -- Single-module projects
-    'build.xml',      -- Ant
-    'pom.xml',        -- Maven
-    'build.gradle',   -- Gradle
-    'build.gradle.kts', -- Gradle
-}
+local function find_main_classes(project_root)
+    local main_classes = {}
+    local src_dir = project_root .. '/src'
 
----@type vim.lsp.Config
-return {
-    ---@param dispatchers? vim.lsp.rpc.Dispatchers
-    ---@param config vim.lsp.ClientConfig
+    -- Recursively scan for Java files using Neovim's vim.fs
+    local function scan_directory(dir)
+        local handle = vim.loop.fs_scandir(dir)
+        if not handle then
+            print("Cannot scan directory: " .. dir)
+            return
+        end
+
+        while true do
+            local name, type = vim.loop.fs_scandir_next(handle)
+            if not name then break end
+
+            local path = dir .. '/' .. name
+
+            if type == 'directory' then
+                -- Recursively scan subdirectories
+                scan_directory(path)
+            elseif type == 'file' and name:match('%.java$') then
+                -- Read file content
+                local f = io.open(path, 'r')
+                if f then
+                    local content = f:read('*all')
+                    f:close()
+
+                    -- Check if file has main method
+                    if content:match('public%s+static%s+void%s+main%s*%(') then
+                        local package = content:match('package%s+([%w%.]+)%s*;')
+                        local class_name = name:match('(.+)%.java$')
+
+                        if package and class_name then
+                            local full_class = package .. '.' .. class_name
+                            table.insert(main_classes, full_class)
+                        elseif class_name then
+                            table.insert(main_classes, class_name)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- Check if src directory exists
+    if vim.fn.isdirectory(src_dir) == 1 then
+        print("Scanning: " .. src_dir)
+        scan_directory(src_dir)
+    else
+        print("ERROR: src directory not found at: " .. src_dir)
+    end
+
+    if #main_classes > 0 then
+        print("Total main classes found: " .. #main_classes .. ", Main classes: " .. vim.inspect(main_classes))
+    end
+
+    return main_classes
+end
+
+-- Configure JDTLS
+vim.lsp.config('jdtls', {
     cmd = function(dispatchers, config)
-        local workspace_dir = get_jdtls_workspace_dir()
+        local workspace_dir = vim.fn.stdpath('cache') .. '/jdtls/workspace'
         local data_dir = workspace_dir
 
         if config.root_dir then
             data_dir = data_dir .. '/' .. vim.fn.fnamemodify(config.root_dir, ':p:h:t')
         end
 
-        local config_cmd = {
-            'jdtls',
-            '-data',
-            data_dir,
-            get_jdtls_jvm_args(),
-        }
+        local jvm_args = get_jdtls_jvm_args()
+        local cmd = { 'jdtls', '-data', data_dir }
 
-        return vim.lsp.rpc.start(config_cmd, dispatchers, {
+        for _, arg in ipairs(jvm_args) do
+            table.insert(cmd, arg)
+        end
+
+        return vim.lsp.rpc.start(cmd, dispatchers, {
             cwd = config.cmd_cwd,
             env = config.cmd_env,
             detached = config.detached,
         })
     end,
+
     filetypes = { 'java' },
-    root_markers = vim.fn.has('nvim-0.11.3') == 1 and { root_markers1, root_markers2 }
-        or vim.list_extend(root_markers1, root_markers2),
-    init_options = {},
+    root_markers = { 'pom.xml', 'build.gradle', 'mvnw', 'gradlew', '.git' },
 
-    on_attach = function(_, bufnr)
-        print("jdtls on_attach called for buffer: " .. bufnr) -- DEBUG
+    on_attach = function(client, bufnr)
+        -- Check if .nvim.lua exists in project root
+        local nvim_lua_exists = false
+        local pom = vim.fs.find('pom.xml', {
+            upward = true,
+            path = vim.fn.expand('%:p:h')
+        })[1]
 
-        -----------------------------
-        -- RUN (Maven)
-        -----------------------------
+        if pom then
+            local project_root = vim.fs.dirname(pom)
+            local nvim_lua_path = project_root .. '/.nvim.lua'
+            nvim_lua_exists = vim.fn.filereadable(nvim_lua_path) == 1
+        end
+
         -- Only set F5 if .nvim.lua doesn't exist (project-specific config takes precedence)
-        local nvim_lua_exists = vim.fn.filereadable(vim.fn.getcwd() .. '/.nvim.lua') == 1
-        print("nvim_lua_exists: " .. tostring(nvim_lua_exists)) -- DEBUG
-
         if not nvim_lua_exists then
-            local function run_java_project()
-                local current_buffer_path = vim.api.nvim_buf_get_name(0)
-                local current_dir = vim.fs.dirname(current_buffer_path)
-
-                local result = vim.fs.find('pom.xml', {
+            -- F5: Run Java project with Maven
+            vim.keymap.set('n', '<F5>', function()
+                -- Find pom.xml
+                local pom_file = vim.fs.find('pom.xml', {
                     upward = true,
-                    stop = vim.loop.os_homedir(),
-                    path = current_dir,
-                })
-                local pom_path = result[1]
+                    path = vim.fn.expand('%:p:h')
+                })[1]
 
-                if not pom_path then
-                    local handle = vim.loop.fs_scandir(vim.fn.getcwd())
-                    if handle then
-                        while true do
-                            local name, type = vim.loop.fs_scandir_next(handle)
-                            if not name then break end
-                            if type == 'directory' then
-                                local check = vim.fn.getcwd() .. '/' .. name .. '/pom.xml'
-                                if vim.fn.filereadable(check) == 1 then
-                                    pom_path = check
-                                    break
-                                end
-                            end
-                        end
-                    end
+                if not pom_file then
+                    vim.notify("No pom.xml found!", vim.log.levels.ERROR)
+                    return
                 end
 
-                -- Execute or Fail
-                if pom_path then
+                print("Found pom.xml: " .. pom_file)
+                local project_root = vim.fs.dirname(pom_file)
+
+                -- Find main classes
+                local main_classes = find_main_classes(project_root)
+
+                if #main_classes == 0 then
+                    vim.notify("No main class found! Check :messages for details", vim.log.levels.ERROR)
+                    return
+                end
+
+                -- Select main class
+                local function run_with_class(main_class)
+                    vim.notify("Running: " .. main_class, vim.log.levels.INFO)
                     vim.cmd('wa')
 
                     local cmd = string.format(
-                        'mvn -f "%s" clean compile exec:java -Dexec.mainClass="org.example.Main"',
-                        pom_path
+                        'mvn -f "%s" clean compile exec:java -Dexec.mainClass="%s"',
+                        pom_file, main_class
                     )
-                    -- Open in a split terminal
-                    vim.cmd('split | terminal ' .. cmd)
-                    vim.cmd('startinsert') -- Auto-focus the terminal
-                else
-                    print("Error: No pom.xml found in parent or immediate subdirectories.")
-                end
-            end
 
-            -- F5: Run Java project with Maven (only if no project-specific .nvim.lua)
-            vim.keymap.set('n', '<F5>', run_java_project, {
+                    print("Executing: " .. cmd)
+                    vim.cmd('split | terminal ' .. cmd)
+                    vim.cmd('startinsert')
+                end
+
+                if #main_classes == 1 then
+                    -- Only one main class, run it directly
+                    run_with_class(main_classes[1])
+                else
+                    -- Multiple main classes, let user choose
+                    vim.ui.select(main_classes, {
+                        prompt = 'Select main class:'
+                    }, function(choice)
+                        if choice then
+                            run_with_class(choice)
+                        end
+                    end)
+                end
+            end, {
                 buffer = bufnr,
                 desc = 'Java: Run (Maven)',
                 noremap = true,
-                silent = false,                                    -- Changed to see debug output
+                silent = false
             })
-            print("F5 mapped to run_java_project for buffer: " .. bufnr) -- DEBUG
         else
-            print("Skipping F5 mapping - .nvim.lua exists")        -- DEBUG
+            print("Skipping F5 mapping - .nvim.lua exists") -- DEBUG
         end
 
-        -----------------------------
-        -- DEBUG (DAP)
-        -----------------------------
+        -- F9: Debug with DAP (if available)
         local ok, dap = pcall(require, 'dap')
         if ok then
             if not dap.configurations.java then
@@ -179,6 +216,29 @@ return {
                         request = 'launch',
                         name = 'Debug Main Class',
                         mainClass = function()
+                            local pom_file = vim.fs.find('pom.xml', {
+                                upward = true,
+                                path = vim.fn.expand('%:p:h')
+                            })[1]
+
+                            if pom_file then
+                                local project_root = vim.fs.dirname(pom_file)
+                                local main_classes = find_main_classes(project_root)
+
+                                if #main_classes == 1 then
+                                    return main_classes[1]
+                                elseif #main_classes > 1 then
+                                    -- Will show selection dialog
+                                    local choice = nil
+                                    vim.ui.select(main_classes, {
+                                        prompt = 'Select main class:'
+                                    }, function(selected)
+                                        choice = selected
+                                    end)
+                                    return choice or main_classes[1]
+                                end
+                            end
+
                             return vim.fn.input('Main class > ')
                         end,
                         projectName = function()
@@ -188,15 +248,19 @@ return {
                 }
             end
 
-            -- F9: Start debugging
             vim.keymap.set('n', '<F9>', dap.continue, {
                 buffer = bufnr,
                 desc = 'Java: Debug',
                 noremap = true,
             })
-            print("F9 mapped to dap.continue for buffer: " .. bufnr) -- DEBUG
-        else
-            print("DAP not available - skipping F9 mapping")   -- DEBUG
         end
     end,
-}
+})
+
+-- Auto-enable jdtls for Java files
+vim.api.nvim_create_autocmd('FileType', {
+    pattern = 'java',
+    callback = function()
+        vim.lsp.enable('jdtls')
+    end,
+})
