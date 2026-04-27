@@ -9,11 +9,11 @@ return {
             ensure_installed = {
                 'bash',
                 'c',
-                'cpp', -- if you use C++
+                'cpp',
                 'java',
                 'python',
                 'javascript',
-                'typescript', -- optional but often useful with JS
+                'typescript',
                 'html',
                 'lua',
                 'luadoc',
@@ -29,30 +29,29 @@ return {
             highlight = {
                 enable = true,
                 -- Some languages depend on vim's regex highlighting system (such as Ruby) for indent rules.
-                --  If you are experiencing weird indenting issues, add the language to
-                --  the list of additional_vim_regex_highlighting and disabled languages for indent.
                 additional_vim_regex_highlighting = { 'ruby' },
             },
-            indent = { enable = true, disable = { 'ruby' } },
+            indent = {
+                enable = true,
+                disable = { 'ruby' }
+            },
         })
 
         vim.opt.foldlevel = 99
         vim.opt.foldlevelstart = 99
         vim.opt.foldenable = true
 
-        -- Setup folding
         vim.api.nvim_create_autocmd('FileType', {
-            group = vim.api.nvim_create_augroup('TS_FOLD_SETUP', {}),
+            group = vim.api.nvim_create_augroup('TS_FOLD_SETUP', { clear = true }),
             callback = function()
                 vim.opt_local.foldmethod = 'expr'
                 vim.opt_local.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
             end,
         })
 
-        -- Restore folds from saved state
         vim.api.nvim_create_autocmd('BufWinEnter', {
-            group = vim.api.nvim_create_augroup('RESTORE_FOLDS', {}),
-            callback = function(event)
+            group = vim.api.nvim_create_augroup('RESTORE_FOLDS', { clear = true }),
+            callback = function()
                 if vim.bo.filetype == '' or vim.bo.buftype ~= '' then
                     return
                 end
@@ -69,20 +68,15 @@ return {
 
         -- Save folds
         vim.api.nvim_create_autocmd('BufWinLeave', {
-            group = vim.api.nvim_create_augroup('SAVE_FOLDS', {}),
+            group = vim.api.nvim_create_augroup('SAVE_FOLDS', { clear = true }),
             callback = function()
+                -- Only save view for actual files
                 if vim.bo.filetype ~= '' and vim.bo.buftype == '' then
                     vim.cmd('silent! mkview')
                 end
             end,
         })
     end,
-    -- There are additional nvim-treesitter modules that you can use to interact
-    -- with nvim-treesitter. You should go explore a few and see what interests you:
-    --
-    --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
-    --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
-    --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
 }
--- if fold not working
--- use 'kevinhwang91/nvim-ufo' instead of pretty-fold
+-- Note: if fold not working as expected
+-- consider 'kevinhwang91/nvim-ufo' instead of pretty-fold
