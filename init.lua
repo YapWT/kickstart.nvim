@@ -191,12 +191,21 @@ vim.diagnostic.config {
   underline = { severity = { min = vim.diagnostic.severity.WARN } },
 
   -- Can switch between these as you prefer
-  virtual_text = true, -- Text shows up at the end of the line
+  virtual_text = true,   -- Text shows up at the end of the line
   virtual_lines = false, -- Text shows up underneath the line, with virtual lines
 
   -- Auto open the float, so you can easily read the errors when jumping with `[d` and `]d`
   jump = { float = true },
 }
+
+-- Fix for Neovim 0.13-dev UI Grid instability
+vim.api.nvim_create_autocmd({ "VimEnter", "BufWinEnter" }, {
+  callback = function()
+    vim.schedule(function()
+      vim.cmd("redraw!")
+    end)
+  end,
+})
 
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 
@@ -309,6 +318,9 @@ require('lazy').setup({
   --
   -- Use the `dependencies` key to specify the dependencies of a particular plugin
 
+  -- Fix for Neo-tree crash in 0.13-dev
+  -- This creates a "fake" event so Neo-tree doesn't crash the UI
+
   require 'kickstart.plugins.telescope',     -- Fuzzy finder
   require 'kickstart.plugins.lspConfig',     -- Main LSP support
   require 'kickstart.plugins.conform',       -- Autoformatting
@@ -329,7 +341,6 @@ require('lazy').setup({
   require 'kickstart.plugins.trouble',
   require 'kickstart.plugins.todo-comments', -- Highlight todo, notes, etc in comments
   require 'kickstart.plugins.pretty-fold',
-
   -- LSP Plugins
   {
     -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
@@ -366,4 +377,5 @@ require('lazy').setup({
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
+-- vim: ts=2 sts=2 sw=2 et
 -- vim: ts=2 sts=2 sw=2 et
