@@ -47,13 +47,9 @@ sudo pacman -S --noconfirm --needed \
   gcc make git \
   ripgrep fd unzip \
   rust-analyzer
-```
 
-Install Java LSP:
-
-```bash
-yay -S jdtls
-yay -S neovim-git
+# Install Java LSP and Neovim Git
+yay -S jdtls neovim-git
 ```
 
 ---
@@ -65,43 +61,15 @@ sudo pacman -S --needed \
   fzf fd ripgrep bat
 ```
 
-### Enable fzf in Zsh
-
-Add to `~/.zshrc`:
-
-```bash
-source /usr/share/fzf/key-bindings.zsh
-source /usr/share/fzf/completion.zsh
-
-export FZF_DEFAULT_COMMAND='fd --type f'
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-```
-
-Apply:
-
-```bash
-source ~/.zshrc
-```
-
 ---
 
 ## 5) Starship Prompt
-
-Install:
 
 ```bash
 sudo pacman -S starship
 ```
 
-Enable in `~/.zshrc`:
-
-```bash
-eval "$(starship init zsh)"
-```
-
 ### Config file
-
-Create:
 
 ```bash
 mkdir -p ~/.config
@@ -160,26 +128,131 @@ format = "⏱ [$duration](yellow)"
 
 ---
 
-## 6) GUI Apps
+## 6) Tmux Setup
+
+```bash
+sudo pacman -S tmux
+```
+
+### Config file (`~/.tmux.conf`)
+
+```tmux
+# change prefix from Ctrl+b → Ctrl+a (more ergonomic)
+unbind C-b
+set -g prefix C-a
+bind C-a send-prefix
+
+# split panes (vim-style)
+bind | split-window -h
+bind - split-window -v
+bind x kill-pane
+bind & kill-window
+bind '"' split-window -v -c "#{pane_current_path}"
+bind % split-window -h -c "#{pane_current_path}"
+
+# reload config
+bind r source-file ~/.tmux.conf \; display "Reloaded!"
+
+# enable mouse (very important)
+set -g mouse on
+
+# faster pane switching
+bind h select-pane -L
+bind j select-pane -D
+bind k select-pane -U
+bind l select-pane -R
+
+# better colors
+set -g default-terminal "screen-256color"
+
+# status bar
+set -g status-bg black
+set -g status-fg white
+set -g status-left "#S"
+set -g status-right "%Y-%m-%d %H:%M | #(whoami)"
+
+# Session management
+bind s choose-session
+bind w choose-window
+
+# start numbering at 1
+set -g base-index 1
+setw -g pane-base-index 1
+set -g automatic-rename on
+set -g remain-on-exit off
+
+# --- Auto-hide status bar for Neovim ---
+
+# Check if the current pane is running Neovim
+is_nvim="ps -o state= -o comm= -t '#{pane_tty}' | grep -iqE '^[^TXZ ]+ +(\\S+\\/)?g?(view|n?vim?x?)(diff)?$'"
+
+# Hook to turn status off when focusing an nvim pane
+set-hook -g pane-focus-in "if-shell \"$is_nvim\" 'set status off' 'set status on'"
+
+# Hook to ensure status comes back when switching windows or panes
+set-hook -g after-select-window "if-shell \"$is_nvim\" 'set status off' 'set status on'"
+set-hook -g after-select-pane "if-shell \"$is_nvim\" 'set status off' 'set status on'"
+
+# Ensure status is on by default when tmux starts
+set -g status on
+```
+
+---
+
+## 7) Zsh Shell Integration
+
+Add the following to your `~/.zshrc`:
+
+```bash
+# 1. fzf logic
+source /usr/share/fzf/key-bindings.zsh
+source /usr/share/fzf/completion.zsh
+export FZF_DEFAULT_COMMAND='fd --type f'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+# 2. IME (Fcitx5) environment
+export GTK_IM_MODULE=fcitx
+export QT_IM_MODULE=fcitx
+export XMODIFIERS=@im=fcitx
+
+# 3. Tmux Autostart
+if command -v tmux >/dev/null 2>&1; then
+  # start tmux automatically if not already inside tmux
+  if [ -z "$TMUX" ]; then
+    tmux attach-session -t main 2>/dev/null || tmux new-session -s main
+  fi
+fi
+
+# 4. Starship Prompt (Must be at the very bottom)
+eval "$(starship init zsh)"
+```
+
+Apply:
+
+```bash
+source ~/.zshrc
+```
+
+---
+
+## 8) GUI Apps
 
 ```bash
 # Official Repos
 sudo pacman -S --needed \
   dolphin pavucontrol \
   alsa-utils pipewire-alsa
-```
 
-```bash
 # AUR apps
 yay -S vesktop google-chrome
-git clone https://aur.archlinux.org/google-chrome.git
+
 cd google-chrome
 makepkg -si
 ```
 
 ---
 
-## 7) Fonts (Required for icons)
+## 9) Fonts (Required for icons)
 
 ```bash
 sudo pacman -S --needed \
@@ -190,22 +263,12 @@ sudo pacman -S --needed \
 
 ---
 
-## 8) IME (Fcitx5)
+## 10) IME (Fcitx5)
 
 ```bash
 sudo pacman -S --needed \
   fcitx5 fcitx5-configtool \
   fcitx5-gtk fcitx5-rime
-```
-
-### Environment variables
-
-Add to `~/.zshrc`:
-
-```bash
-export GTK_IM_MODULE=fcitx
-export QT_IM_MODULE=fcitx
-export XMODIFIERS=@im=fcitx
 ```
 
 Start manually (or autostart later):
@@ -216,31 +279,30 @@ fcitx5 &
 
 ---
 
-## 9) Terminal Emulator (Alacritty)
-
-Install:
+## 11) Terminal Emulator (Alacritty)
 
 ```bash
 sudo pacman -S alacritty
-```
-
-Config file:
-
-```bash
 mkdir -p ~/.config/alacritty
 nano ~/.config/alacritty/alacritty.toml
 ```
 
-### Config
+Paste:
 
 ```toml
+# ~/.config/alacritty/alacritty.toml
+
 [general]
 live_config_reload = true
 
 [window]
-padding = { x = 12, y = 12 }
-opacity = 0.90
+# padding = { x = 12, y = 12 }
+opacity = 1.00
 startup_mode = "Windowed"
+
+[window.padding]
+x = 0
+y = 0
 
 [font]
 size = 13
@@ -267,7 +329,8 @@ bindings = [
   { key = "Return", mods = "Control|Shift", action = "SpawnNewInstance" },
   { key = "K", mods = "Control|Shift", action = "ClearHistory" },
   { key = "Home", mods = "Control|Shift", action = "ScrollToTop" },
-  { key = "End", mods = "Control|Shift", action = "ScrollToBottom" }
+  { key = "End", mods = "Control|Shift", action = "ScrollToBottom" },
+  { key = "F11", action = "ToggleFullscreen" }
 ]
 
 [colors.primary]
@@ -297,7 +360,6 @@ white = "#c0caf5"
 
 ---
 
-
 ## Verify Everything
 
 ```bash
@@ -308,6 +370,5 @@ zsh --version
 yay --version
 fzf --version
 starship --version
+tmux -V
 ```
-
----
