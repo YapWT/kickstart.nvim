@@ -34,8 +34,7 @@ sudo pacman -S --needed \
 ```bash
 sudo pacman -S --needed \
   jdk-openjdk maven \
-  rust nodejs npm \
-  downgrade
+  rust downgrade
 ```
 
 ---
@@ -46,7 +45,10 @@ sudo pacman -S --needed \
 sudo pacman -S --noconfirm --needed \
   gcc make git \
   ripgrep fd unzip \
-  rust-analyzer
+  rust-analyzer \
+  nodejs npm
+
+sudo npm install -g tree-sitter-cli
 
 # Install Java LSP and Neovim Git
 yay -S jdtls neovim-git
