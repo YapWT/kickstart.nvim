@@ -204,27 +204,121 @@ set -g status on
 Add the following to your `~/.zshrc`:
 
 ```bash
-# 1. fzf logic
+
+# =========================
+# 1. FZF CONFIG
+# =========================
+
 source /usr/share/fzf/key-bindings.zsh
 source /usr/share/fzf/completion.zsh
+
 export FZF_DEFAULT_COMMAND='fd --type f'
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
-# 2. IME (Fcitx5) environment
+
+# =========================
+# 2. IME (Fcitx5)
+# =========================
+
 export GTK_IM_MODULE=fcitx
 export QT_IM_MODULE=fcitx
 export XMODIFIERS=@im=fcitx
 
-# 3. Tmux Autostart
-if command -v tmux >/dev/null 2>&1; then
-  # start tmux automatically if not already inside tmux
-  if [ -z "$TMUX" ]; then
-    tmux attach-session -t main 2>/dev/null || tmux new-session -s main
-  fi
-fi
 
-# 4. Starship Prompt (Must be at the very bottom)
+# =========================
+# 3. HISTORY (ADD THIS - IMPORTANT)
+# =========================
+
+HISTSIZE=10000
+SAVEHIST=20000
+HISTFILE="$HOME/.zsh_history"
+
+setopt APPEND_HISTORY
+setopt INC_APPEND_HISTORY
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_REDUCE_BLANKS
+setopt HIST_SAVE_NO_DUPS
+
+
+# =========================
+# 4. TMUX (SAFE + MANUAL CONTROL)
+# =========================
+
+# Manual aliases (recommended)
+alias t='tmux'
+alias ta='tmux attach || tmux new-session -s main'
+
+# OPTIONAL AUTO-START (disabled by default)
+# Uncomment if you want terminal to always open in tmux:
+#
+# if command -v tmux >/dev/null 2>&1; then
+#   if [ -z "$TMUX" ]; then
+#     tmux attach-session -t main 2>/dev/null || tmux new-session -s main
+#   fi
+# fi
+
+
+# =========================
+# 5. USEFUL SHELL BEHAVIOR
+# =========================
+
+setopt AUTO_CD
+setopt CORRECT
+setopt INTERACTIVE_COMMENTS
+
+
+# =========================
+# 6. COMPLETION SYSTEM
+# =========================
+
+autoload -Uz compinit
+compinit
+
+zstyle ':completion:*' menu select
+
+
+# =========================
+# 7. ALIASES
+# =========================
+
+alias ll='ls -lah'
+alias la='ls -A'
+alias l='ls -CF'
+
+alias gs='git status'
+alias gc='git commit'
+alias gp='git push'
+alias gpl='git pull'
+
+
+# =========================
+# 8. PATH
+# =========================
+
+export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+
+
+# =========================
+# 9. STARSHIP PROMPT (MUST BE LAST)
+# =========================
+
 eval "$(starship init zsh)"
+
+# =========================
+# 10. FIX HOME / END / DELETE KEYS
+# =========================
+
+# Home
+bindkey "^[[H" beginning-of-line
+bindkey "^[OH" beginning-of-line
+
+# End
+bindkey "^[[F" end-of-line
+bindkey "^[OF" end-of-line
+
+# Delete
+bindkey "^[[3~" delete-char
 ```
 
 Apply:
