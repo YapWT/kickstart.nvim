@@ -27,6 +27,28 @@ sudo pacman -S --needed \
   usbutils wl-clipboard
 ```
 
+### 🔵 Bluetooth Support (BlueZ)
+
+Enable Bluetooth devices like headphones, speakers, keyboards, and file transfer support.
+
+```bash
+sudo pacman -S --needed bluez bluez-utils bluedevil
+sudo systemctl enable --now bluetooth
+```
+
+---
+
+### ⚡ Realtime Audio Stability (RealtimeKit)
+
+Improves audio performance and reduces crackling/latency issues in PipeWire/PulseAudio.
+
+```bash
+sudo pacman -S --needed rtkit
+sudo systemctl enable --now rtkit-daemon
+```
+
+---
+
 ---
 
 ## 2) Development tools
@@ -703,6 +725,7 @@ white = "#c0caf5"
 ```
 
 ---
+
 
 ## Verify Everything
 
