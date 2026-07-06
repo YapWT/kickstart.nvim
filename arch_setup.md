@@ -24,7 +24,8 @@ chsh -s $(which zsh)
 sudo pacman -S --needed \
   fastfetch glances \
   wget unzip nano \
-  usbutils wl-clipboard
+  usbutils wl-clipboard \
+  dolphin kio-extras kio-admin dolphin-plugins kdesdk-thumbnailers
 ```
 
 ### 🔵 Bluetooth Support (BlueZ)
@@ -696,7 +697,9 @@ bindings = [
   { key = "K", mods = "Control|Shift", action = "ClearHistory" },
   { key = "Home", mods = "Control|Shift", action = "ScrollToTop" },
   { key = "End", mods = "Control|Shift", action = "ScrollToBottom" },
-  { key = "F11", action = "ToggleFullscreen" }
+  { key = "F11", action = "ToggleFullscreen" },
+  { key = "Left",  mods = "Control", chars = "\u001bb" },
+  { key = "Right", mods = "Control", chars = "\u001bf" }
 ]
 
 [colors.primary]
